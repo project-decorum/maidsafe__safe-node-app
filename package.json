@@ -1,0 +1,12 @@
+{
+    "dependencies": {
+        "@types/node": "*"
+    },
+    "deprecated": false,
+    "description": "TypeScript definitions for @maidsafe/safe-node-app",
+    "license": "MIT",
+    "main": "",
+    "name": "@types/maidsafe__safe-node-app",
+    "typeScriptVersion": "2.9",
+    "version": "0.8.1"
+}
