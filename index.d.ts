@@ -1261,15 +1261,86 @@ declare module '@maidsafe/safe-node-app' {
    */
   export function fromAuthURI(appInfo: AppInfo, authUri: string, networkStateCallBack?: () => any, options?: InitOptions): Promise<SAFEApp>;
 
+  /**
+   * Constants available for the applications to be used in a few cases
+   * as values of input parameters.
+   */
   export enum CONSTANTS {
+    /**
+     * NFS File open in overwrite mode. When used as the `openMode` parameter
+     * for `nfs.open(<fileName>, <openMode>)` the entire content of the file
+     * will be replaced when writing data to it.
+     */
     NFS_FILE_MODE_OVERWRITE = 1,
+
+    /**
+     * NFS File open in append mode. When used as the `openMode` param for
+     * `nfs.open(<fileName>, <openMode>)` any new content written to the file
+     * will be appended to the end without modifying existing data.
+     */
     NFS_FILE_MODE_APPEND = 2,
+
+    /**
+     * NFS File open in read-only mode. When used as the `openMode` param for
+     * `nfs.open(<fileName>, <openMode>)` only the read operation is allowed.
+     */
     NFS_FILE_MODE_READ = 4,
+
+    /**
+     * Read the file from the beginning. When used as the `position` param for
+     * the NFS `file.read(<position>, <length>)` function, the file will be read
+     * from the beginning.
+     */
     NFS_FILE_START = 0,
+
+    /**
+     * Read until the end of a file. When used as the `length` param for the NFS
+     * `file.read(<position>, <length>)` function, the file will be read from
+     * the position provided until the end of its content. E.g. if
+     * `NFS_FILE_START` and `NFS_FILE_END` are passed in as the `position` and
+     * `length` parameters respectively, then the whole content of the file will
+     * be read.
+     */
     NFS_FILE_END = 0,
+
+    /**
+     * Any user. When used as the `signkey` param in any of the MutableData
+     * functions to manipulate user permissions, like `getUserPermissions`,
+     * `setUserPermissions`, `delUserPermissions`, etc., this will associate the
+     * permissions operation to any user rather than to a particular sign key.
+     * E.g. if this constant is used as the `signkey` param of the
+     * `setUserPermissions(<signKey>, <permissionSet>, <version>)` function, the
+     * permissions in the `permissionSet` provided will be granted to anyone
+     * rather to a specific user's/aplication's sign key.
+     */
     USER_ANYONE = 0,
+
+    /**
+     * MutableData's entry key where its metadata is stored. The MutableData's
+     * metadata can be set either when invoking the `quickSetup` function or by
+     * invking the `setMetadata` function. The metadata is stored as an encoded
+     * entry in the MutableData which key is `MD_METADATA_KEY`, thus this
+     * constant can be used to realise which of the entries is not application's
+     * data but the MutableData's metadata instead. The metadata is particularly
+     * used by the Authenticator when another application has requested mutation
+     * permissions on a MutableData, displaying this information to the user,
+     * so the user can make a better decision to either allow or deny such a
+     * request based on it.
+     */
     MD_METADATA_KEY = '_metadata',
+
+    /**
+     * Represents an empty set of MutableData's entries. This can be used when
+     * invoking the `put` function of the MutableData API to signal that it
+     * should be committed to the network with an empty set of entries.
+     */
     MD_ENTRIES_EMPTY = 0,
+
+    /**
+     * Represents an empty set of MutableData's permissions. This can be used
+     * when invoking the `put` function of the MutableData API to signal that it
+     * should be committed to the network with an empty set of permissions.
+     */
     MD_PERMISSION_EMPTY = 0,
   }
 
