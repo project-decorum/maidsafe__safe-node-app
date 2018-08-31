@@ -894,7 +894,7 @@ declare module '@maidsafe/safe-node-app/src/api/auth' {
      * @param uri the IPC response string given
      * @returns the given app instance with a newly setup and authenticated session.
      */
-    loginFromURI(uri: string): Promise<SAFEApp>;
+    loginFromUri(uri: string): Promise<SAFEApp>;
 
     /**
      * *ONLY AVAILALBE IF RUN in NODE_ENV='development' || 'testing'*
@@ -1245,7 +1245,7 @@ declare module '@maidsafe/safe-node-app' {
    * @param options initialisation options
    * @returns promise to a SAFEApp instance
    */
-  export function initializeApp(appInfo: AppInfo, networkStateCallBack?: () => any, options?: InitOptions): Promise<SAFEApp>;
+  export function initialiseApp(appInfo: AppInfo, networkStateCallBack?: () => any, options?: InitOptions): Promise<SAFEApp>;
 
   /**
    * If you have received a response URI (which you are allowed to store
@@ -1259,7 +1259,7 @@ declare module '@maidsafe/safe-node-app' {
    * @param options initialisation options
    * @returns promise to a SAFEApp instance
    */
-  export function fromAuthURI(appInfo: AppInfo, authUri: string, networkStateCallBack?: () => any, options?: InitOptions): Promise<SAFEApp>;
+  export function fromAuthUri(appInfo: AppInfo, authUri: string, networkStateCallBack?: () => any, options?: InitOptions): Promise<SAFEApp>;
 
   /**
    * Constants available for the applications to be used in a few cases
