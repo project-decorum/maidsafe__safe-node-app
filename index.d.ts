@@ -139,6 +139,153 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/nfs' {
   }
 }
 
+declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
+  import { MutableData, NameAndTag } from '@maidsafe/safe-node-app/src/api/mutable';
+  import { CONSTANTS } from '@maidsafe/safe-node-app';
+
+  /**
+   * RDF Emulation on top of a MutableData
+   */
+  class RDF {
+    /**
+     * Instantiate the RDF emulation layer wrapping a MutableData instance
+     * 
+     * @param mData the MutableData to wrap around
+     */
+    constructor(mData: MutableData);
+
+    /**
+     * @param id 
+     */
+    setId(id);
+
+    /**
+     * @param ids list of id's to fetch e.g. ['safe://mywebid.mypubname', ...]
+     */
+    nowOrWhenFetched(ids: string[]): Promise<any>;
+
+    /**
+     * @param uri 
+     */
+    namespace(uri);
+
+    /**
+     * @param value 
+     * @param language 
+     * @param datatype 
+     */
+    literal(value, language, datatype);
+
+    /**
+     * @param nodes 
+     */
+    list(nodes);
+
+    bnode();
+
+    /**
+     * @param uri 
+     */
+    sym(uri);
+
+    /**
+     * @param subject 
+     * @param predicate 
+     * @param object 
+     */
+    any(subject, predicate, object);
+
+    /**
+     * @param subject 
+     * @param predicate 
+     * @param object 
+     */
+    each(subject, predicate, object);
+
+    /**
+     * @param subject 
+     * @param predicate 
+     * @param object 
+     */
+    statementsMatching(subject, predicate, object);
+
+    /**
+     * @param subject 
+     * @param predicate 
+     * @param object 
+     */
+    removeMany(subject, predicate, object);
+
+    /**
+     * @param data 
+     * @param mimeType 
+     * @param id 
+     */
+    parse(data, mimeType, id);
+
+    /**
+     * @param subject
+     * @param predicate
+     * @param object
+     */
+    add(subject, predicate, object);
+
+    /**
+     * @param mimeType 
+     */
+    serialise(mimeType): Promise<unknown>;
+
+    /**
+     * Commit the RDF document to the underlying MutableData on the network
+     * @param toEncrypt
+     */
+    commit(toEncrypt: boolean): Promise<NameAndTag>;
+
+    /**
+     * Append the triples to the RDF document into the underlying MutableData on the network
+     */
+    append(): Promise<NameAndTag>;
+  }
+}
+
+
+
+declare module '@maidsafe/safe-node-app/src/api/emulations/web_id' {
+  import { MutableData } from '@maidsafe/safe-node-app/src/api/mutable';
+
+  /**
+   * WebID Emulation on top of a MutableData using RDF emulation
+   */
+  class WebID {
+    /**
+     * Instantiate the WebID emulation layer wrapping a MutableData instance,
+     * while making use of the RDF emulation to manipulate the MD entries
+     * 
+     * @param mData the MutableData to wrap around
+     */
+    constructor(mData: MutableData);
+
+    fetchContent(): Promise<any>;
+
+    /**
+     * @param profile 
+     * @param displayName 
+     */
+    create(profile, displayName): Promise<any>;
+
+    /**
+     * @param profile 
+     */
+    update(profile): Promise<any>;
+
+    /**
+     * @param mimeType 
+     */
+    serialise(mimeType): Promise<any>;
+  }
+}
+
+
 declare module '@maidsafe/safe-node-app/src/api/cipher_opt' {
   import { PubEncKey } from '@maidsafe/safe-node-app/src/api/crypto';
 
@@ -193,6 +340,7 @@ declare module '@maidsafe/safe-node-app/src/app' {
   import { CipherOptInterface } from '@maidsafe/safe-node-app/src/api/cipher_opt';
   import { ImmutableDataInterface } from '@maidsafe/safe-node-app/src/api/immutable';
   import { MutableDataInterface } from '@maidsafe/safe-node-app/src/api/mutable';
+  import { WebInterface } from '@maidsafe/safe-node-app/src/api/web';
   import { WebFetchOptions } from '@maidsafe/safe-node-app/src/web_fetch';
   import { AppInfo, InitOptions } from '@maidsafe/safe-node-app';
 
@@ -241,6 +389,11 @@ declare module '@maidsafe/safe-node-app/src/app' {
      * get the MutableDataInterface instance connected to this session
      */
     mutableData: MutableDataInterface;
+
+    /**
+     * Manage Web RDF Data.
+     */
+    web: WebInterface;
 
     /**
      * Helper to lookup a given `safe://`-url in accordance with the convention
@@ -404,6 +557,8 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
   import { SAFEApp } from '@maidsafe/safe-node-app/src/app';
   import { PubSignKey } from '@maidsafe/safe-node-app/src/api/crypto';
   import { NFS } from '@maidsafe/safe-node-app/src/api/emulations/nfs';
+  import { RDF } from '@maidsafe/safe-node-app/src/api/emulations/rdf';
+  import { WebID } from '@maidsafe/safe-node-app/src/api/emulations/web_id';
 
   /**
    * Holds the permissions of a MutableData object
@@ -727,12 +882,12 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
     getSerialisedSize(): Promise<number>;
 
     /**
-     * Wrap this MutableData into a known abstraction. Currently only known: `NFS`
+     * Wrap this MutableData into a known abstraction.
      *
      * @param eml name of the emulation
      * @returns the Emulation you are asking for
      */
-    emulateAs(eml: string): NFS;
+    emulateAs(eml: string): NFS | RDF | WebID;
   }
 
   /**
@@ -790,6 +945,62 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
      * Create a new Mutuable Data object from its serial
      */
     fromSerial(): Promise<MutableData>;
+  }
+}
+
+declare module '@maidsafe/safe-node-app/src/api/web' {
+  import { SAFEApp } from '@maidsafe/safe-node-app/src/app';
+  import { RDF } from '@maidsafe/safe-node-app/src/api/emulations/rdf';
+
+  class WebInterface {
+    constructor(app: SAFEApp);
+
+    /**
+     * Retrieve vocab for RDF/SAFE Implementation of DNS (publicNames/subDomains/services)
+     * 
+     * @param rdf RDF object to utilise for namespace func
+     * @return object containing keys with RDF namespace values.
+     */
+    getVocabs(rdf: RDF): any;
+
+    /**
+     * Add entry to _publicNames container, linking to a specific RDF/MD
+     * object for subdomain discovery/service resolution.catch
+     * 
+     * @param publicName string, valid URL
+     * @param subdomainsRdfLocation MutableData name/typeTag
+     * @return resolves upon commit of data to _publicNames
+     */
+    createPublicName(publicName: string, subdomainsRdfLocation: any): Promise<any>;
+
+    /**
+     * @param subdomain 
+     * @param publicName 
+     * @param serviceLocation 
+     */
+    addServiceToSubdomain(subdomain, publicName, serviceLocation): Promise<any>;
+
+    /**
+     * Return an Array of publicNames
+     * 
+     * @return Returns <Array> of PublicNames
+     */
+    getPublicNames(): Promise<any[]>;
+
+    /**
+     * Adds a web id to the _public container, using
+     * 
+     * @param webIdLocation name/typetag object from SAFE MD.
+     * @param displayName optional displayName which will be used when listing webIds.
+     */
+    addWebIdToDirectory(webIdUri, displayName): Promise<any>;
+
+    /**
+     * Retrieve all webIds... Currently as array of JSON objects...
+     *
+     * @return Resolves to array of webIds objects.
+     */
+    getWebIds(): Promise<any[]>;
   }
 }
 
@@ -1358,6 +1569,11 @@ declare module '@maidsafe/safe-node-app/src/error_const' {
   export const ERR_NO_SUCH_DATA: CodeError;
 
   /**
+   * Thrown natively when data already exists at the target address on network.
+   */
+  export const ERR_DATA_GIVEN_ALREADY_EXISTS: CodeError;
+
+  /**
    * Thrown natively when entry on found in MutableData.
    */
   export const ERR_NO_SUCH_ENTRY: CodeError;
@@ -1487,4 +1703,19 @@ declare module '@maidsafe/safe-node-app/src/error_const' {
    * MutableData
    */
   export const INVALID_SEC_KEY: CodeError;
+
+  /**
+   * RDF Location provided is not and object with name/typeTag
+   */
+  export const INVALID_RDF_LOCATION: CodeError;
+
+  /**
+   * RDF Location provided is not and object with name/typeTag
+   */
+  export const INVALID_SUBDOMAIN: CodeError;
+
+  /**
+   * RDF object does not have an ID.
+   */
+  export const MISSING_RDF_ID: CodeError;
 }

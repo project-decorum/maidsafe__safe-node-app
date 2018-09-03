@@ -12,5 +12,5 @@
         "url": "https://www.github.com:project-decorum/maidsafe__safe-node-app.git"
     },
     "scripts": {},
-    "version": "0.9.1"
+    "version": "0.10.0-alpha"
 }
