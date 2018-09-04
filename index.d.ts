@@ -237,6 +237,7 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
 
     /**
      * Commit the RDF document to the underlying MutableData on the network
+     * 
      * @param toEncrypt
      */
     commit(toEncrypt: boolean): Promise<NameAndTag>;
@@ -271,7 +272,7 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/web_id' {
      * @param profile 
      * @param displayName 
      */
-    create(profile, displayName): Promise<any>;
+    create(profile, displayName?): Promise<any>;
 
     /**
      * @param profile 
@@ -885,9 +886,22 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
      * Wrap this MutableData into a known abstraction.
      *
      * @param eml name of the emulation
-     * @returns the Emulation you are asking for
      */
-    emulateAs(eml: string): NFS | RDF | WebID;
+    emulateAs(eml: 'NFS'): NFS;
+
+    /**
+     * Wrap this MutableData into a known abstraction.
+     *
+     * @param eml name of the emulation
+     */
+    emulateAs(eml: 'RDF'): RDF;
+
+    /**
+     * Wrap this MutableData into a known abstraction.
+     *
+     * @param eml name of the emulation
+     */
+    emulateAs(eml: 'WebID'): WebID;
   }
 
   /**
@@ -951,6 +965,7 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
 declare module '@maidsafe/safe-node-app/src/api/web' {
   import { SAFEApp } from '@maidsafe/safe-node-app/src/app';
   import { RDF } from '@maidsafe/safe-node-app/src/api/emulations/rdf';
+  import { NameAndTag } from '@maidsafe/safe-node-app/src/api/mutable';
 
   class WebInterface {
     constructor(app: SAFEApp);
@@ -971,14 +986,14 @@ declare module '@maidsafe/safe-node-app/src/api/web' {
      * @param subdomainsRdfLocation MutableData name/typeTag
      * @return resolves upon commit of data to _publicNames
      */
-    createPublicName(publicName: string, subdomainsRdfLocation: any): Promise<any>;
+    createPublicName(publicName: string, subdomainsRdfLocation: any): Promise<void>;
 
     /**
      * @param subdomain 
      * @param publicName 
      * @param serviceLocation 
      */
-    addServiceToSubdomain(subdomain, publicName, serviceLocation): Promise<any>;
+    addServiceToSubdomain(subdomain, publicName, serviceLocation): Promise<NameAndTag>;
 
     /**
      * Return an Array of publicNames
@@ -993,7 +1008,7 @@ declare module '@maidsafe/safe-node-app/src/api/web' {
      * @param webIdLocation name/typetag object from SAFE MD.
      * @param displayName optional displayName which will be used when listing webIds.
      */
-    addWebIdToDirectory(webIdUri, displayName): Promise<any>;
+    addWebIdToDirectory(webIdUri, displayName?): Promise<any>;
 
     /**
      * Retrieve all webIds... Currently as array of JSON objects...
