@@ -157,7 +157,7 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
     /**
      * @param id 
      */
-    setId(id);
+    setId(id: any): void;
 
     /**
      * @param ids list of id's to fetch e.g. ['safe://mywebid.mypubname', ...]
@@ -167,73 +167,73 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
     /**
      * @param uri 
      */
-    namespace(uri);
+    namespace(uri: any): any;
 
     /**
      * @param value 
      * @param language 
      * @param datatype 
      */
-    literal(value, language?, datatype?);
+    literal(value: any, language?: any, datatype?: any): any;
 
     /**
      * @param nodes 
      */
-    list(nodes);
+    list(nodes: any): any;
 
-    bnode();
+    bnode(): any;
 
     /**
      * @param uri 
      */
-    sym(uri);
+    sym(uri: any): any;
 
     /**
      * @param subject 
      * @param predicate 
      * @param object 
      */
-    any(subject, predicate, object);
+    any(subject: any, predicate: any, object: any): any;
 
     /**
      * @param subject 
      * @param predicate 
      * @param object 
      */
-    each(subject, predicate, object);
+    each(subject: any, predicate: any, object: any): any;
 
     /**
      * @param subject 
      * @param predicate 
      * @param object 
      */
-    statementsMatching(subject, predicate, object);
+    statementsMatching(subject: any, predicate: any, object: any): any;
 
     /**
      * @param subject 
      * @param predicate 
      * @param object 
      */
-    removeMany(subject, predicate, object);
+    removeMany(subject: any, predicate: any, object: any): any;
 
     /**
      * @param data 
      * @param mimeType 
      * @param id 
      */
-    parse(data, mimeType, id);
+    parse(data: any, mimeType: any, id: any): any;
 
     /**
      * @param subject
      * @param predicate
      * @param object
      */
-    add(subject, predicate, object);
+    add(subject: any, predicate: any, object: any): any;
 
     /**
      * @param mimeType 
      */
-    serialise(mimeType): Promise<unknown>;
+    serialise(mimeType: any): Promise<unknown>;
 
     /**
      * Commit the RDF document to the underlying MutableData on the network
@@ -272,17 +272,17 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/web_id' {
      * @param profile 
      * @param displayName 
      */
-    create(profile, displayName?): Promise<any>;
+    create(profile: any, displayName?: any): Promise<any>;
 
     /**
      * @param profile 
      */
-    update(profile): Promise<any>;
+    update(profile: any): Promise<any>;
 
     /**
      * @param mimeType 
      */
-    serialise(mimeType): Promise<any>;
+    serialise(mimeType: string): Promise<any>;
   }
 }
 
@@ -995,7 +995,7 @@ declare module '@maidsafe/safe-node-app/src/api/web' {
      * @param publicName 
      * @param serviceLocation 
      */
-    addServiceToSubdomain(subdomain, publicName, serviceLocation): Promise<NameAndTag>;
+    addServiceToSubdomain(subdomain: any, publicName: any, serviceLocation: any): Promise<NameAndTag>;
 
     /**
      * Return an Array of publicNames
@@ -1010,7 +1010,7 @@ declare module '@maidsafe/safe-node-app/src/api/web' {
      * @param webIdLocation name/typetag object from SAFE MD.
      * @param displayName optional displayName which will be used when listing webIds.
      */
-    addWebIdToDirectory(webIdUri, displayName?): Promise<any>;
+    addWebIdToDirectory(webIdUri: any, displayName?: any): Promise<any>;
 
     /**
      * Retrieve all webIds... Currently as array of JSON objects...
