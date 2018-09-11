@@ -162,7 +162,7 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
     /**
      * @param ids list of id's to fetch e.g. ['safe://mywebid.mypubname', ...]
      */
-    nowOrWhenFetched(ids: string[]): Promise<any>;
+    nowOrWhenFetched(ids?: string[]): Promise<any>;
 
     /**
      * @param uri 
@@ -174,7 +174,7 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
      * @param language 
      * @param datatype 
      */
-    literal(value, language, datatype);
+    literal(value, language?, datatype?);
 
     /**
      * @param nodes 
@@ -238,9 +238,9 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
     /**
      * Commit the RDF document to the underlying MutableData on the network
      * 
-     * @param toEncrypt
+     * @param toEncrypt 
      */
-    commit(toEncrypt: boolean): Promise<NameAndTag>;
+    commit(toEncrypt?: boolean): Promise<NameAndTag>;
 
     /**
      * Append the triples to the RDF document into the underlying MutableData on the network
@@ -957,8 +957,10 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
 
     /**
      * Create a new Mutuable Data object from its serial
+     * 
+     * @param serial
      */
-    fromSerial(): Promise<MutableData>;
+    fromSerial(serial: any): Promise<MutableData>;
   }
 }
 
