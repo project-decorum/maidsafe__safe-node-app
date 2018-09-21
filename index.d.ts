@@ -147,6 +147,14 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
    * RDF Emulation on top of a MutableData
    */
   class RDF {
+    public mData: MutableData;
+
+    public graphStore: any;
+
+    public id: any;
+
+    public vocabs: any;
+
     /**
      * Instantiate the RDF emulation layer wrapping a MutableData instance
      * 
@@ -253,11 +261,18 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
 
 declare module '@maidsafe/safe-node-app/src/api/emulations/web_id' {
   import { MutableData } from '@maidsafe/safe-node-app/src/api/mutable';
+  import { RDF } from '@maidsafe/safe-node-app/src/api/emulations/rdf';
 
   /**
    * WebID Emulation on top of a MutableData using RDF emulation
    */
   class WebID {
+    public mData: MutableData;
+
+    public rdf: RDF;
+
+    public vocabs: any;
+
     /**
      * Instantiate the WebID emulation layer wrapping a MutableData instance,
      * while making use of the RDF emulation to manipulate the MD entries
