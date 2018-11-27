@@ -71,11 +71,11 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/nfs' {
   }
 
   /**
-   * NFS Emulation on top of an MData
+   * NFS Emulation on top of a MutableData
    */
   class NFS {
     /**
-     * NFS Emulation on top of an MData
+     * Instantiate the NFS emulation layer rapping a MutableData instance
      */
     constructor(mData: MutableData);
 
@@ -108,19 +108,24 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/nfs' {
 
     /**
      * Replace a path with a new file. Directly commit to the network.
+     * 
+     * CONSTANTS.GET_NEXT_VERSION: Applies update to next file version.
      *
      * @param fileName the path to store the file under
      * @param file the file to serialise and store
-     * @param versionthe version successor number, to ensure you are overwriting the right one
+     * @param version the version successor number, to ensure you are overwriting the right one
      * @param userMetadata - optional parameter for updating user metadata
      * @returns the same file
      */
-    update(fileName: string | Buffer, file: NfsFile, version: number, userMetadata: string | Buffer): Promise<NfsFile>;
+    update(fileName: string | Buffer, file: NfsFile, version: number | CONSTANTS.GET_NEXT_VERSION, userMetadata: string | Buffer): Promise<NfsFile>;
 
     /**
      * Delete a file from path. Directly commit to the network.
+     * 
+     * @param version the version successor number, to ensure you are deleting the right one
+     * @return version of deleted file
      */
-    delete(fileName: string | Buffer, version: number): Promise<void>;
+    delete(fileName: string | Buffer, version: number): Promise<number>;
 
     /**
      * Open a file for reading or writing.
@@ -348,6 +353,26 @@ declare module '@maidsafe/safe-node-app/src/web_fetch' {
      */
     range: { start: number, end: number };
   }
+
+  /**
+   * holds information about a network resource fetched from a `safe://`-URL
+   */
+  interface NetworkResource {
+    /**
+     * the network resource object
+     */
+    content: any;
+    
+    /**
+     * the type of the resource fetched, e.g. 'NFS'
+     */
+    resourceType: any;
+    
+    /**
+     * the parsed path from the provided URL
+     */
+    parsedPath: any;
+  }
 }
 
 declare module '@maidsafe/safe-node-app/src/app' {
@@ -357,7 +382,7 @@ declare module '@maidsafe/safe-node-app/src/app' {
   import { ImmutableDataInterface } from '@maidsafe/safe-node-app/src/api/immutable';
   import { MutableDataInterface } from '@maidsafe/safe-node-app/src/api/mutable';
   import { WebInterface } from '@maidsafe/safe-node-app/src/api/web';
-  import { WebFetchOptions } from '@maidsafe/safe-node-app/src/web_fetch';
+  import { WebFetchOptions, NetworkResource } from '@maidsafe/safe-node-app/src/web_fetch';
   import { AppInfo, InitOptions } from '@maidsafe/safe-node-app';
 
   /**
@@ -420,6 +445,15 @@ declare module '@maidsafe/safe-node-app/src/app' {
      * @returns the object with body of content and headers
      */
     webFetch(url: string, options?: WebFetchOptions): Promise<any>;
+
+    /**
+    * Experimental function to lookup a given `safe://`-URL in accordance with the
+    * public name resolution and find the requested network resource.
+    *
+    * @param url the url you want to fetch
+    * @returns the network resource found from the passed URL
+    */
+    fetch(url: string): Promise<NetworkResource>;
 
     /**
      * Returns true if current network connection state is INIT.
@@ -487,7 +521,7 @@ declare module '@maidsafe/safe-node-app/src/app' {
     /**
      * @returns true if the underlyging library was compiled against mock-routing.
      */
-    isMockBuild(): boolean;
+    appIsMock(): boolean;
   }
 }
 
@@ -534,9 +568,11 @@ declare module '@maidsafe/safe-node-app/src/api/immutable' {
      * Close and write the immutable Data to the network.
      *
      * @param cipherOpt the Cipher Opt to encrypt data with
+     * @param getXorUrl (experimental) if the XOR-URL shall also be returned along with the xor address
+     * @param mimeType (experimental) the MIME type to encode in the XOR-URL as the codec of the content
      * @returns the address to the data once written to the network
      */
-    close(cipherOpt: CipherOpt): Promise<string>;
+    close(cipherOpt: CipherOpt, getXorUrl?: boolean, mimeType?: string): Promise<string>;
   }
 
   /**
@@ -724,6 +760,11 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
      * the type tag
      */
     typeTag: number;
+
+    /**
+     * If the experimental APIs are enabled the XOR-URL is also returned in the object.
+     */
+    xorUrl: string;
   }
 
   /**
@@ -1140,7 +1181,7 @@ declare module '@maidsafe/safe-node-app/src/api/auth' {
     loginFromUri(uri: string): Promise<SAFEApp>;
 
     /**
-     * *ONLY AVAILALBE IF RUN in NODE_ENV='development' || 'testing'*
+     * *ONLY AVAILALBE IF RUN in NODE_ENV='test' OR WITH 'forceUseMock' option*
      *
      * Generate a _locally_ registered App with the given permissions, or a local unregistered App if permissions is `null`.
      *
@@ -1149,7 +1190,7 @@ declare module '@maidsafe/safe-node-app/src/api/auth' {
     loginForTest(access: any, opts?: { own_container: boolean }): Promise<SAFEApp>;
 
     /**
-     * *ONLY AVAILALBE IF RUN in NODE_ENV='development' || 'testing'*
+     * *ONLY AVAILALBE IF RUN in NODE_ENV='test' OR WITH 'forceUseMock' option*
      *
      * Simulates a network disconnection event. This can be used to test any logic
      * to be executed by an application when a network diconnection notification
@@ -1477,6 +1518,12 @@ declare module '@maidsafe/safe-node-app' {
      * variable value. Defaults to false
      */
     forceUseMock?: boolean;
+
+    /**
+     * to enable the experimental APIs regardless if the--enable - experimental
+     * - apis flag was passed as argument to the application.Defaults to false.
+     */
+    enableExperimentalApis?: boolean;
   }
 
 
@@ -1585,6 +1632,13 @@ declare module '@maidsafe/safe-node-app' {
      * should be committed to the network with an empty set of permissions.
      */
     MD_PERMISSION_EMPTY = 0,
+
+    /**
+     * Gets next correct file version.
+     * This constant may be used in place of the version argument when invoking
+     * `update` function of the NFS API to automatically obtain correct file version.
+     */
+    GET_NEXT_VERSION = 0,
   }
 
   export const VERSION: string;
@@ -1593,7 +1647,13 @@ declare module '@maidsafe/safe-node-app' {
 declare module '@maidsafe/safe-node-app/src/error_const' {
   interface CodeError extends Error {
     code: number;
+    msg: string;
   }
+
+  /**
+   * Thrown natively when failing to encrypt/decrypt a MD entry
+   */
+  export const ERR_SERIALISING_DESERIALISING: CodeError;
 
   /**
    * Thrown natively when data not found on network.
@@ -1737,14 +1797,35 @@ declare module '@maidsafe/safe-node-app/src/error_const' {
   export const INVALID_SEC_KEY: CodeError;
 
   /**
+   * Thrown when functions that are experimental APIs were not enabled but
+   * attempted to be used
+   */
+  export const EXPERIMENTAL_API_DISABLED: CodeError;
+
+  /**
+   * the service/subname was not found
+   */
+  export const ERR_SERVICE_NOT_FOUND: CodeError;
+
+  /**
+   * the content was not found at the address provided
+   */
+  export const ERR_CONTENT_NOT_FOUND: CodeError;
+
+  /**
    * RDF Location provided is not and object with name/typeTag
    */
   export const INVALID_RDF_LOCATION: CodeError;
 
   /**
+   * public name provided is not valid
+   */
+  export const INVALID_PUBNAME: CodeError;
+
+  /**
    * RDF Location provided is not and object with name/typeTag
    */
-  export const INVALID_SUBDOMAIN: CodeError;
+  export const INVALID_SUBNAME: CodeError;
 
   /**
    * RDF object does not have an ID.
