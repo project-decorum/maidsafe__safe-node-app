@@ -1644,6 +1644,26 @@ declare module '@maidsafe/safe-node-app' {
   export const VERSION: string;
 }
 
+declare module '@maidsafe/safe-node-app/src/consts' {
+  const TAG_TYPE_DNS = 15001;
+  const TAG_TYPE_WWW = 15002;
+
+  const NET_STATE_INIT = -100;
+  const NET_STATE_DISCONNECTED = -1;
+  const NET_STATE_CONNECTED = 0;
+
+  const LIB_LOCATION_MOCK = 'mock';
+  const LIB_LOCATION_PROD = 'prod';
+
+  const INDEX_HTML = 'index.html';
+
+  const CID_VERSION = 1;
+  const CID_BASE_ENCODING = 'base32z';
+  const CID_HASH_FN = 'sha3-256';
+  const CID_DEFAULT_CODEC = 'raw';
+  const CID_MIME_CODEC_PREFIX = 'mime/';
+}
+
 declare module '@maidsafe/safe-node-app/src/error_const' {
   interface CodeError extends Error {
     code: number;
