@@ -337,6 +337,8 @@ declare module '@maidsafe/safe-node-app/src/api/cipher_opt' {
 }
 
 declare module '@maidsafe/safe-node-app/src/web_fetch' {
+  import { MutableData } from '@maidsafe/safe-node-app/src/api/mutable';
+
   /**
    * holds additional options for the `webFetch` function.
    */
@@ -361,17 +363,22 @@ declare module '@maidsafe/safe-node-app/src/web_fetch' {
     /**
      * the network resource object
      */
-    content: any;
+    content: MutableData;
     
     /**
      * the type of the resource fetched, e.g. 'NFS'
      */
-    resourceType: any;
+    resourceType: string;
     
     /**
      * the parsed path from the provided URL
      */
     parsedPath: any;
+
+    /**
+     * Undocumented property. (@b-zee)
+     */
+    mimeType: string;
   }
 }
 
@@ -444,7 +451,7 @@ declare module '@maidsafe/safe-node-app/src/app' {
      * @param options additional options
      * @returns the object with body of content and headers
      */
-    webFetch(url: string, options?: WebFetchOptions): Promise<any>;
+    webFetch(url: string, options?: WebFetchOptions): Promise<{ body: string, headers: any }>;
 
     /**
     * Experimental function to lookup a given `safe://`-URL in accordance with the
@@ -713,7 +720,7 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
      *
      * @returns the entries list
      */
-    listEntries(): Promise<Array<any>>;
+    listEntries(): Promise<Array<{ key: Uint8Array, value: ValueVersion }>>;
 
     /**
      * Insert a new entry. Once you call `MutableData.put` with this entry, it
@@ -736,7 +743,7 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
   }
 
   /**
-   * Holds the informatation of a value of a MutableData
+   * Holds the information of a value of a MutableData
    */
   interface ValueVersion {
     /**
@@ -747,7 +754,7 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
     /**
      * the version
      */
-    version: Buffer;
+    version: number;
   }
 
   interface NameAndTag {
@@ -872,13 +879,13 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
      * Get a list with the keys contained in this MutableData
      * @returns the keys list
      */
-    getKeys(): Promise<Array<any>>;
+    getKeys(): Promise<Array<Uint8Array>>;
 
     /**
      * Get the list of values contained in this MutableData
      * @returns the list of values
      */
-    getValues(): Promise<Array<any>>;
+    getValues(): Promise<Array<ValueVersion>>;
 
     /**
      * Get a Handle to the permissions associated with this mutableData
