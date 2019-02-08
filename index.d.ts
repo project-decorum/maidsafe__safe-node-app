@@ -720,7 +720,7 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
      *
      * @returns the entries list
      */
-    listEntries(): Promise<Array<{ key: Uint8Array, value: ValueVersion }>>;
+    listEntries(): Promise<Array<{ key: Buffer, value: ValueVersion }>>;
 
     /**
      * Insert a new entry. Once you call `MutableData.put` with this entry, it
@@ -879,7 +879,7 @@ declare module '@maidsafe/safe-node-app/src/api/mutable' {
      * Get a list with the keys contained in this MutableData
      * @returns the keys list
      */
-    getKeys(): Promise<Array<Uint8Array>>;
+    getKeys(): Promise<Array<Buffer>>;
 
     /**
      * Get the list of values contained in this MutableData
@@ -1033,6 +1033,12 @@ declare module '@maidsafe/safe-node-app/src/api/web' {
   import { NameAndTag } from '@maidsafe/safe-node-app/src/api/mutable';
 
   class WebInterface {
+    public app: SAFEApp;
+
+    /**
+    * @private
+    * @param app
+    */
     constructor(app: SAFEApp);
 
     /**
@@ -1040,43 +1046,63 @@ declare module '@maidsafe/safe-node-app/src/api/web' {
      * 
      * @param rdf RDF object to utilise for namespace func
      * @return object containing keys with RDF namespace values.
+     * @example
+     * const rdf = mData.emulateAs('RDF');
+     * const vocabs = app.web.getVocabs(rdf);
      */
     getVocabs(rdf: RDF): any;
 
     /**
      * Add entry to _publicNames container, linking to a specific RDF/MD
-     * object for subdomain discovery/service resolution.catch
-     * 
-     * @param publicName string, valid URL
-     * @param subdomainsRdfLocation MutableData name/typeTag
+     * object for subName discovery/service resolution
+     * @param  publicName public name string, valid URL
+     * @param  subNamesRdfLocation MutableData name/typeTag object
+     * @throws {INVALID_RDF_LOCATION|INVALID_URL}
      * @return resolves upon commit of data to _publicNames
+     * @example
+     * const asyncFn = async () => {
+     *     try {
+     *         const networkResource = await app.fetch('safe://hyfktce85xaif4kdamgnd16uho3w5z7peeb5zeho836uoi48tgkgbc55bco:30303');
+     *         const nameAndTag = await networkResource.content.getNameAndTag();
+     *         const publicName = 'safedev';
+     *         const subNamesRdfLocation = nameAndTag;
+     *         await app.web.addPublicNameToDirectory(publicName, subNamesRdfLocation);
+     *     } catch(err) {
+     *         throw err;
+     *     }
+     * };
      */
-    createPublicName(publicName: string, subdomainsRdfLocation: any): Promise<void>;
+    addPublicNameToDirectory(publicName: string, subNamesRdfLocation: NameAndTag): Promise<void>;
 
     /**
-     * @param subdomain 
-     * @param publicName 
-     * @param serviceLocation 
+     * Links a service/resource to a publicName, with a provided subName
+     * @param subName
+     * @param publicName
+     * @param serviceLocation
+     * @throws {INVALID_SUBNAME|INVALID_PUBNAME|INVALID_RDF_LOCATION|ERR_DATA_GIVEN_ALREADY_EXISTS}
+     * @return Resolves to an object with xorname and
+     * typeTag of the publicName RDF location
      */
-    addServiceToSubdomain(subdomain: any, publicName: any, serviceLocation: any): Promise<NameAndTag>;
+    linkServiceToSubname(subName: string, publicName: string, serviceLocation: NameAndTag): Promise<NameAndTag>;
 
     /**
      * Return an Array of publicNames
      * 
-     * @return Returns <Array> of PublicNames
+     * @return Returns array of PublicNames
      */
     getPublicNames(): Promise<any[]>;
 
     /**
-     * Adds a web id to the _public container, using
+     * Adds a WebID to the '_public' container, using
      * 
-     * @param webIdLocation name/typetag object from SAFE MD.
+     * @param webIdUri name/typetag object from SAFE MD.
      * @param displayName optional displayName which will be used when listing webIds.
+     * @throws {INVALID_URL|MISSING_RDF_ID}
      */
     addWebIdToDirectory(webIdUri: any, displayName?: any): Promise<any>;
 
     /**
-     * Retrieve all webIds... Currently as array of JSON objects...
+     * Retrieve all webIds. Currently as array of JSON objects...
      *
      * @return Resolves to array of webIds objects.
      */
