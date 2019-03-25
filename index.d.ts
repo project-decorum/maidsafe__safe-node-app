@@ -4,6 +4,8 @@
 
 /// <reference types="node" />
 
+// TODO: Update JSdoc to match
+
 declare module '@maidsafe/safe-node-app/src/api/emulations/nfs' {
   import { MutableData } from '@maidsafe/safe-node-app/src/api/mutable';
   import { CONSTANTS } from '@maidsafe/safe-node-app';
@@ -18,49 +20,102 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/nfs' {
     constructor(ref: any);
 
     /**
-     * The dataMapName to read the immutable data at
-     *
-     * @returns XoR-name
+     * XOR address of file's underlying {@link ImmutableData} data map
      */
     dataMapName: Buffer;
 
     /**
-     * @returns user_metadata
+     * Get metadata passed during file insertion of update
      */
     userMetadata: Buffer;
 
     /**
-     * When was this created? in UTC.
+     * Get UTC date of file context creation
      */
     created: Date;
 
     /**
-     * When was this last modified? in UTC.
+     * Get UTC date of file context modification
      */
     modified: Date;
 
     /**
      * Get file size
+     * 
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const asyncFn = async () => {
+     *   try {
+     *     const nfs = await mData.emulateAs('NFS');
+     *     const fileContext = await nfs.create('<buffer or string>');
+     *     const fileSize = await fileContext.size();
+     *   } catch (err) {
+     *     throw err;
+     *   }
+     * };
      */
     size(): Promise<number>;
 
     /**
-     * Read the file. NFS_FILE_START and NFS_FILE_END may be used to read the
-     * entire content of the file. These constants are exposed by the
-     * safe-app-nodejs package.
-     *
-     * @param position
-     * @param len
+     * Read the file.
+     * CONSTANTS.NFS_FILE_START and CONSTANTS.NFS_FILE_END may be used
+     * to read the entire content of the file. These constants are
+     * exposed by the safe-app-nodejs package.
+     * 
+     * @throws {ERR_FILE_NOT_FOUND}
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const position = safe.CONSTANTS.NFS_FILE_START;
+     * const len = safe.CONSTANTS.NFS_FILE_END;
+     * const openMode = safe.CONSTANTS.NFS_FILE_MODE_READ;
+     * const asyncFn = async () => {
+     *   try {
+     *     const nfs = await mData.emulateAs('NFS');
+     *     let fileContext = await nfs.create('<buffer or string>');
+     *     fileContext = await nfs.open(fileContext, openMode);
+     *     const data = await fileContext.read(position, len);
+     *   } catch (err) {
+     *     throw err;
+     *   }
+     * };
      */
     read(position: number | CONSTANTS.MD_ENTRIES_EMPTY, len: number | CONSTANTS.NFS_FILE_END): Promise<[Buffer, number]>;
 
     /**
-     * Write file
+     * Write file. Does not commit file to network.
+     * 
+     * @throws {ERR_FILE_NOT_FOUND}
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const asyncFn = async () => {
+     *     try {
+     *         const nfs = await mData.emulateAs('NFS');
+     *         const fileContext = await nfs.open();
+     *         await fileContext.write('<buffer or string>');
+     *     } catch (err) {
+     *         throw err;
+     *     }
+     * };
      */
     write(content: Buffer | string): Promise<void>;
 
     /**
-     * Close file
+     * Close file and commit to network.
+     * 
+     * @throws {ERR_FILE_NOT_FOUND}
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const content = '<html><body><h1>WebSite</h1></body></html>';
+     * const asyncFn = async () => {
+     *     try {
+     *         const nfs = await mData.emulateAs('NFS');
+     *         const fileContext = await nfs.open();
+     *         await fileContext.write('<buffer or string>');
+     *         await fileContext.close();
+     *     } catch (err) {
+     *         throw err;
+     *     }
+     * };
      */
     close(): Promise<void>;
 
@@ -71,7 +126,7 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/nfs' {
   }
 
   /**
-   * NFS Emulation on top of a MutableData
+   * NFS emulation on top of a {@link MutableData}
    */
   class NFS {
     /**
@@ -81,49 +136,124 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/nfs' {
 
     /**
      * Helper function to create and save file to the network
-     *
-     * @param content file contents
-     * @returns  a newly created file
+     * 
+     * @returns a newly created file
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const content = '<html><body><h1>WebSite</h1></body></html>';
+     * const asyncFn = async () => {
+     *     try {
+     *       const nfs = await mData.emulateAs('NFS');
+     *       const fileContext = await nfs.create(content);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
-    create(content: string | Buffer): NfsFile;
+    create(content: string | Buffer): Promise<NfsFile>;
 
     /**
      * Find the file of the given filename (aka keyName in the MutableData)
-     *
-     * @param fileName the path/file name
+     * 
+     * @param fileName - the path/file name
      * @returns the file found for that path
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const content = '<html><body><h1>WebSite</h1></body></html>';
+     * const asyncFn = async () => {
+     *     const fileName = 'index.html';
+     *     try {
+     *       const nfs = await mData.emulateAs('NFS');
+     *       const fileContext = await nfs.create(content);
+     *       await nfs.insert(fileName, fileContext);
+     *       const fileContext = await nfs.fetch(fileName);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     fetch(fileName: string): Promise<NfsFile>;
 
     /**
-     * Insert the given file into the underlying MutableData, directly commit to
-     * the network.
+     * Insert the given file into the underlying {@link MutableData}, directly commit
+     * to the network.
      *
-     * @param fileName - the path to store the file under
-     * @param file - the file to serialise and store
+     * _Note_: As this application layer, the network does not check any
+     * of the metadata provided.
+     * 
+     * @param fileName The path to store the file under
+     * @param file The file to serialise and store
      * @param userMetadata
-     * @returns the same file
+     * @returns The same file
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const content = '<html><body><h1>WebSite</h1></body></html>';
+     * const userMetadata = 'text/html';
+     * const asyncFn = async () => {
+     *     try {
+     *       const nfs = await mData.emulateAs('NFS');
+     *       let fileContext = await nfs.create(content);
+     *       const fileName = 'index.html';
+     *       fileContext = await nfs.insert(fileName, fileContext, userMetadata);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     insert(fileName: string | Buffer, file: NfsFile, userMetadata?: string | Buffer): Promise<NfsFile>;
 
     /**
      * Replace a path with a new file. Directly commit to the network.
-     * 
+     *
      * CONSTANTS.GET_NEXT_VERSION: Applies update to next file version.
      *
+     * _Note_: As this application layer, the network does not check any
+     * of the metadata provided.
+     * 
      * @param fileName the path to store the file under
-     * @param file the file to serialise and store
-     * @param version the version successor number, to ensure you are overwriting the right one
-     * @param userMetadata - optional parameter for updating user metadata
+     * @param file - the file to serialise and store
+     * @param version the version successor number
+     * @param userMetadata optional parameter for updating user metadata
      * @returns the same file
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const content = '<html><body><h1>Updated WebSite</h1></body></html>';
+     * const userMetadata = 'text/html';
+     * const asyncFn = async () => {
+     *     try {
+     *       const version = safe.CONSTANTS.GET_NEXT_VERSION;
+     *       const nfs = await mData.emulateAs('NFS');
+     *       const fileContext = await nfs.create(content);
+     *       const fileName = 'index.html';
+     *       fileContext = await nfs.update(fileName, fileContext, version + 1, userMetadata);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     update(fileName: string | Buffer, file: NfsFile, version: number | CONSTANTS.GET_NEXT_VERSION, userMetadata: string | Buffer): Promise<NfsFile>;
 
     /**
      * Delete a file from path. Directly commit to the network.
      * 
-     * @param version the version successor number, to ensure you are deleting the right one
-     * @return version of deleted file
+     * @param fileName
+     * @param version the version successor number
+     * @returns version of deleted file
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const content = '<html><body><h1>Updated WebSite</h1></body></html>';
+     * const fileName = 'index.html';
+     * const asyncFn = async () => {
+     *     try {
+     *       const version = await mData.getVersion();
+     *       const nfs = await mData.emulateAs('NFS');
+     *       const fileContext = await nfs.create(content);
+     *       fileContext = await nfs.insert(fileName, fileContext);
+     *       const version = await nfs.delete(fileName, version + 1);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     delete(fileName: string | Buffer, version: number): Promise<number>;
 
@@ -133,17 +263,29 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/nfs' {
      * Open modes (these constants are exported by the safe-app-nodejs package):
      *
      * CONSTANTS.NFS_FILE_MODE_OVERWRITE: Replaces the entire content of the file when writing data.
+     *
      * CONSTANTS.NFS_FILE_MODE_APPEND: Appends to existing data in the file.
+     *
      * CONSTANTS.NFS_FILE_MODE_READ: Open file to read.
      *
-     * @param file
-     * @param NfsFile Defaults to NFS_FILE_MODE_OVERWRITE.
-     * @returns {Promise<NfsFile>}
+     * @param file If no {@link File} is passed, then a new instance is created in {@link CONSTANTS.NFS_FILE_MODE_OVERWRITE}
+     * @param openMode defaults to CONSTANTS.NFS_FILE_MODE_OVERWRITE
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const asyncFn = async () => {
+     *     try {
+     *       const nfs = await mData.emulateAs('NFS');
+     *       const fileContext = await nfs.open();
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
-    open(file: NfsFile, openMode?: number | CONSTANTS.NFS_FILE_MODE_OVERWRITE | CONSTANTS.NFS_FILE_MODE_APPEND | CONSTANTS.NFS_FILE_MODE_READ): Promise<NfsFile>;
+    open(file: NfsFile | undefined | null, openMode?: number | CONSTANTS.NFS_FILE_MODE_OVERWRITE | CONSTANTS.NFS_FILE_MODE_APPEND | CONSTANTS.NFS_FILE_MODE_READ): Promise<NfsFile>;
   }
 }
 
+// TODO: FIX RDFLIB RETURN TYPES
 declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
   import { MutableData, NameAndTag } from '@maidsafe/safe-node-app/src/api/mutable';
   import { CONSTANTS } from '@maidsafe/safe-node-app';
@@ -183,16 +325,32 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
     namespace(uri: any): any;
 
     /**
-     * @param value 
-     * @param language 
-     * @param datatype 
+     * @param value Literal value
+     * @param languageOrDatatype Either i18n language tag or XSD URI data type
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const asyncFn = async () => {
+     *   try {
+     *     const rdf = await mData.emulateAs('RDF');
+     *     const discoveryDate = new Date("18 Feb 1930");
+     *     const dateTimeDataType = "http://www.w3.org/2001/XMLSchema#dateTime";
+     *     let literalNode = rdf.literal(discoveryDate.toISOString(), dateTimeDataType);
+     *     console.log( JSON.stringify(literalNode) );
+     *
+     *     // Alternatively
+     *     literalNode = rdf.literal("Aardvark", "en-US");
+     *     console.log( JSON.stringify(literalNode) );
+     *   } catch (err) {
+     *     throw err;
+     *   }
+     * };
      */
-    literal(value: any, language?: any, datatype?: any): any;
+    literal(value: string | number, languageOrDatatype?: string): any;
 
     /**
      * @param nodes 
      */
-    list(nodes: any): any;
+    collection(nodes: any): any;
 
     bnode(): any;
 
@@ -206,42 +364,42 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/rdf' {
      * @param predicate 
      * @param object 
      */
-    any(subject: any, predicate: any, object: any): any;
+    any(subject: any, predicate: any, object: any, provenance: any): any;
 
     /**
      * @param subject 
      * @param predicate 
      * @param object 
      */
-    each(subject: any, predicate: any, object: any): any;
+    each(subject: any, predicate: any, object: any, provenance: any): any;
 
     /**
      * @param subject 
      * @param predicate 
      * @param object 
      */
-    statementsMatching(subject: any, predicate: any, object: any): any;
+    statementsMatching(subject: any, predicate: any, object: any, provenance: any): any;
 
     /**
      * @param subject 
      * @param predicate 
      * @param object 
      */
-    removeMany(subject: any, predicate: any, object: any): any;
+    removeMany(subject: any, predicate: any, object: any, provenance: any): any;
 
     /**
      * @param data 
      * @param mimeType 
      * @param id 
      */
-    parse(data: any, mimeType: any, id: any): any;
+    parse(data: any, mimeType: any, id: any, provenance: any): any;
 
     /**
      * @param subject
      * @param predicate
      * @param object
      */
-    add(subject: any, predicate: any, object: any): any;
+    add(subject: any, predicate: any, object: any, provenance: any): any;
 
     /**
      * @param mimeType 
@@ -286,23 +444,97 @@ declare module '@maidsafe/safe-node-app/src/api/emulations/web_id' {
      */
     constructor(mData: MutableData);
 
+    /**
+     * Initialises WebID interface by emulating underlying {@link MutableData}
+     * as RDF and sets common namespace prefixes on instance
+     */
+    init(): void;
+    
+    /**
+     * Fetches committed WebId data from underlying MutableData and loads in graph store
+     * 
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const asyncFn = async () => {
+     *   try {
+     *       const webid = await mData.emulateAs('WebId');
+     *       await webid.fetchContent();
+     *   } catch(err) {
+     *       throw err;
+     *   }
+     * };
+     */
     fetchContent(): Promise<any>;
 
     /**
-     * @param profile 
-     * @param displayName 
+     * Creates WebId as RDF data and commits to underlying MutableData
+     * 
+     * @param profile
+     * @param nick profile.nick
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const profile = {
+     *     nick: "safedev",
+     *     name: "SAFENetwork Developer",
+     *     uri: "safe://id.safedev"
+     * };
+     * const asyncFn = async () => {
+     *   try {
+     *       const webid = await mData.emulateAs('WebId');
+     *       await webid.create(profile, profile.nick);
+     *   } catch(err) {
+     *       throw err;
+     *   }
+     * };
      */
-    create(profile: any, displayName?: any): Promise<any>;
+    create(profile: any, displayName?: string): Promise<any>;
 
     /**
-     * @param profile 
+     * Updates WebId as RDF data and commits to underlying MutableData
+     * 
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const profile = {
+     *     nick: "safedev",
+     *     name: "SAFENetwork Developer",
+     *     uri: "safe://id.safedev"
+     * };
+     * const asyncFn = async () => {
+     *   try {
+     *       const webid = await mData.emulateAs('WebId');
+     *       await webid.create(profile, profile.nick);
+     *       let updatedProfile = Object.assign({}, profile, { name: "Alexander Fleming" });
+     *       await webid.update(profile);
+     *   } catch(err) {
+     *       throw err;
+     *   }
+     * };
      */
     update(profile: any): Promise<any>;
 
     /**
-     * @param mimeType 
+     * Serialises WebId RDF data
+     * 
+     * @returns RDF document according to mime type
+     * @example
+     * // Assumes {@link MutableData} interface has been obtained
+     * const mimeType = "text/turtle";
+     * const profile = {
+     *     nick: "safedev",
+     *     name: "SAFENetwork Developer",
+     *     uri: "safe://id.safedev"
+     * };
+     * const asyncFn = async () => {
+     *   try {
+     *       const webid = await mData.emulateAs('WebId');
+     *       await webid.create(profile, profile.nick);
+     *       const serialised = await webid.serialise(mimeType);
+     *   } catch(err) {
+     *       throw err;
+     *   }
+     * };
      */
-    serialise(mimeType: string): Promise<any>;
+    serialise(mimeType: string): Promise<string>;
   }
 }
 
@@ -316,23 +548,55 @@ declare module '@maidsafe/safe-node-app/src/api/cipher_opt' {
   export class CipherOpt { }
 
   /**
-   * Provide the Cipher Opt API
+   * Provides encryption methods for committing {@link ImmutableData}
    */
   export class CipherOptInterface {
     /**
-     * Create a PlainText Cipher Opt
+     * Create a plaintext cipher
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     const cipherOpt = await app.cipherOpt.newPlainText();
+     *     const immdWriter = await app.immutableData.create();
+     *     await idWriter.write('<public file buffer data>');
+     *     const idAddress = await idWriter.close(cipherOpt);
+     * };
      */
-    newPlainText(): CipherOpt;
+    newPlainText(): Promise<CipherOpt>;
 
     /**
-     * Create a new Symmetric Cipher
+     * Create a new symmetric cipher
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     const cipherOpt = await app.cipherOpt.newSymmetric();
+     *     const immdWriter = await app.immutableData.create();
+     *     await idWriter.write('Data for my eyes only.');
+     *     const idAddress = await idWriter.close(cipherOpt);
+     * };
      */
-    newSymmetric(): CipherOpt;
+    newSymmetric(): Promise<CipherOpt>;
 
     /**
      * Create a new Asymmetric Cipher for the given public encryption key
+     * @param pubEncKey
+     * @throws {MISSING_PUB_ENC_KEY}
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     // For this example you're encrypting data with our own public encryption key,
+     *     // which only you will be able to deciper, however,
+     *     // the use case is for encrypting with the intended recipient's public encryption key.
+     *     const pubEncKey = await app.crypto.getAppPubEncKey();
+     *     const cipherOpt = await app.cipherOpt.newAsymmetric(pubEncKey);
+     *     const immdWriter = await app.immutableData.create();
+     *     const data = 'Data only decipherable by the holder of the private encryption key
+     *     which is paired to the public encryption key supplied to asymmetric cipher.';
+     *     await idWriter.write(data);
+     *     const idAddress = await idWriter.close(cipherOpt);
+     * };
      */
-    newAsymmetric(pubEncKey: PubEncKey): CipherOpt;
+    newAsymmetric(pubEncKey: PubEncKey): Promise<CipherOpt>;
   }
 }
 
@@ -537,7 +801,7 @@ declare module '@maidsafe/safe-node-app/src/api/immutable' {
   import { SAFEApp } from '@maidsafe/safe-node-app/src/app';
 
   /**
-   * Holds the connection to read an existing ImmutableData
+   * {@link ImmutableDataInterface} reader
    */
   class Reader {
     /**
@@ -547,17 +811,66 @@ declare module '@maidsafe/safe-node-app/src/api/immutable' {
 
     /**
      * Read the given amount of bytes from the network
-     *
-     * @param options [offset=0] start position; [end=size] end position or end of data.
+     * 
+     * @param options [options.offset=0] start position. [options.end=size] end position or end of data.
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     const readOptions =
+     *     {
+     *         offset: 0, // starts reading from this byte position
+     *         end: null // ends reading at this byte position
+     *     };
+     *     try {
+     *         const iDataReader = await app.immutableData.fetch(iDataAddress)
+     *         const data = await iDataReader.read(readOptions)
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
-    read(options?: { offset: number, end: number }): void;
+    read(options?: { offset: number, end: number }): Promise<Buffer>;
 
     /**
      * The size of the immutable data on the network
-     *
      * @returns length in bytes
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     try {
+     *         const size = await iDataReader.size()
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     size(): Promise<number>;
+
+    /**
+     * Get the XOR-URL of the {@link ImmutableDataInterface}.
+     *
+     * @param mimeType (experimental) the MIME type to encode in the XOR-URL as
+     * the codec of the content
+     * @returns The XOR-URL of the ImmutableData.
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     try {
+     *         const cipherOpt = await app.cipherOpt.newPlainText();
+     *         const iDataWriter = await app.immutableData.create()
+     *         const data = `Most proteins are glycosylated.
+     *         Mass spectrometry methods are used for mapping glycoprotein.`;
+     *         await iDataWriter.write(data);
+     *         const iDataAddress = await iDataWriter.close(cipherOpt);
+     *         const idReader = await app.immutableData.fetch(iDataAddress);
+     *         const mimeType = 'text/plain';
+     *         const xorUrl = idReader.getXorUrl(mimeType);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
+     */
+    getXorUrl(mimeType: string): string;
   }
 
   /**
@@ -565,21 +878,52 @@ declare module '@maidsafe/safe-node-app/src/api/immutable' {
    */
   class Writer {
     /**
-     * Append the given data to immutable Data.
+     * Append the given data to {@link ImmutableDataInterface}. This does not commit data to network.
      *
      * @param data The string or buffer to write
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     try {
+     *         const iDataWriter = await app.immutableData.create()
+     *         const data = `Most proteins are glycosylated.
+     *         Mass spectrometry methods are used for mapping glycoprotein.`;
+     *         await iDataWriter.write(data);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     write(data: string | Buffer): Promise<void>;
 
     /**
-     * Close and write the immutable Data to the network.
+     * Close and commit the {@link ImmutableDataInterface} to the network.
      *
-     * @param cipherOpt the Cipher Opt to encrypt data with
+     * @param cipherOpt The cipher method with which to encrypt data
      * @param getXorUrl (experimental) if the XOR-URL shall also be returned along with the xor address
      * @param mimeType (experimental) the MIME type to encode in the XOR-URL as the codec of the content
-     * @returns the address to the data once written to the network
+     * @returns  The XOR address to the data once written to the network, or an object that contains both the XOR address and XOR URL.
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     try {
+     *         const cipherOpt = await app.cipherOpt.newPlainText();
+     *         const iDataWriter = await app.immutableData.create()
+     *         const data = `Most proteins are glycosylated.
+     *         Mass spectrometry methods are used for mapping glycoprotein.`;
+     *         await iDataWriter.write(data);
+     *         const iDataAddress = await iDataWriter.close(cipherOpt);
+     *
+     *         // Alternatively:
+     *         // const getXorUrl = true;
+     *         // const mimeType = 'text/plain';
+     *         // const iDataMeta = await iDataWriter.close(cipherOpt, getXorUrl, mimeType);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
-    close(cipherOpt: CipherOpt, getXorUrl?: boolean, mimeType?: string): Promise<string>;
+    close(cipherOpt: CipherOpt, getXorUrl?: boolean, mimeType?: string): Promise<Buffer | { name: Buffer, xorUrl: String }>;
   }
 
   /**
@@ -596,19 +940,35 @@ declare module '@maidsafe/safe-node-app/src/api/immutable' {
     constructor(app: SAFEApp);
 
     /**
-     * Create a new ImmutableDataInterface
+     * Create a new {@link ImmutableDataInterface} writer
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     try {
+     *         const iDataWriter = await app.immutableData.create()
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     create(): Promise<Writer>;
 
     /**
-     * Look up an existing Immutable Data for the given address
-     *
-     * @param address the XorName on the network
+     * Look up an existing {@link ImmutableDataInterface} for the given address
+     * 
+     * @param address XOR address
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     try {
+     *         const iDataReader = await app.immutableData.fetch(iDataAddress);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     fetch(address: Buffer): Promise<Reader>;
-
   }
-
 }
 
 declare module '@maidsafe/safe-node-app/src/api/mutable' {
@@ -1237,39 +1597,93 @@ declare module '@maidsafe/safe-node-app/src/api/crypto' {
   import { SAFEApp } from '@maidsafe/safe-node-app/src/app';
 
   /**
-   * Holds the public part of an encryption key
+   * Holds the public part of an encryption key pair
    */
   class PubEncKey {
 
     /**
-     * generate raw string copy of public encryption key
+     * Generate raw buffer of public encryption key
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *   try {
+     *     const encKeyPair = await app.crypto.generateEncKeyPair();
+     *     const pubEncKey = encKeyPair.pubEncKey;
+     *     const rawPubEncKey = await pubEncKey.getRaw();
+     *   } catch (err) {
+     *     throw err;
+     *   }
+     * };
      */
     getRaw(): Promise<Buffer>;
 
     /**
-     * Encrypt the input (buffer or string) using the private and public key with a seal
-     *
-     * @returns Ciphertext
+     * Encrypt the input using recipient's public key. Only recipient will be
+     * able to decrypt data. Read more about [sealed boxes]{@link https://libsodium.gitbook.io/doc/public-key_cryptography/sealed_boxes}.
+     * @returns Encrypted data
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     const stringOrBuffer = 'plain string to be encrypted';
+     *     try {
+     *       const rawPubEncKey = Buffer.from(<recipient's public encryption key>);
+     *       const pubEncKey = await app.crypto.pubEncKeyFromRaw(rawPubEncKey.buffer);
+     *       const encryptedData = await pubEncKey.encryptSealed(data);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
-    encryptSealed(): Promise<Buffer>;
+    encryptSealed(data: string | Buffer): Promise<Buffer>;
 
     /**
-     * Decrypt the given cipher text (buffer or string) using this public
-     * encryption key and the given secret key
+     * Decrypt the given cipher text using the sender's public encryption key
+     * and the recipient's secret encryption key. Read more about [authenticated encryption]{@link https://libsodium.gitbook.io/doc/public-key_cryptography/authenticated_encryption}.
      *
-     * @param cipher to decrypt
-     * @param secretEncKey secret encryption key
-     * @returns plain text
+     * @arg cipher Encrypted data
+     * @arg secretEncKey Recipient's secret encryption key
+     * @returns Decrypted data
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     const cipher = 'plain text to be encrypted';
+     *     try {
+     *       const encKeyPair = await app.crypto.generateEncKeyPair();
+     *       const rawPubEncKey = Buffer.from(<sender's public encryption key>);
+     *       const pubEncKey = await app.crypto.pubEncKeyFromRaw(rawPubEncKey.buffer);
+     *       const secretEncKey = encKeyPair.secEncKey;
+     *       const decryptedData = await pubEncKey.decrypt(cipher, secretEncKey)
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     decrypt(cipher: Buffer, secretEncKey: SecEncKey): Promise<Buffer>;
 
     /**
-     * Encrypt the input (buffer or string) using this public encryption key and
-     * the given secret key.
+     * Encrypt the input using recipient's public encryption key and sender's
+     * secret encryption key, such that each party can generate a shared secret
+     * key to verify the integrity of ciphers and to also decrypt them. Read
+     * more about [authenticated encryption]{@link https://libsodium.gitbook.io/doc/public-key_cryptography/authenticated_encryption}.
      *
-     * @param data to be encrypted
-     * @param secretEncKey secret encrpytion key
-     * @returns cipher text
+     * @param data
+     * @param secretEncKey Sender's secret encryption key
+     * @throws {MISSING_SEC_ENC_KEY}
+     * @returns Encrypted data
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     const data = 'plain text to be encrypted';
+     *     try {
+     *       const encKeyPair = await app.crypto.generateEncKeyPair();
+     *       const rawPubEncKey = Buffer.from(<recipient's public encryption key>);
+     *       const pubEncKey = await app.crypto.pubEncKeyFromRaw(rawPubEncKey.buffer);
+     *       const secretEncKey = encKeyPair.secEncKey;
+     *       const encryptedBuffer = await pubEncKey.encrypt(data, secretEncKey)
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     encrypt(data: Buffer, secretEncKey: SecEncKey): Promise<Buffer>;
   }
@@ -1280,67 +1694,115 @@ declare module '@maidsafe/safe-node-app/src/api/crypto' {
   class SecEncKey {
 
     /**
-     * generate raw string copy of secret encryption key
+     * Generate raw buffer of secret encryption key
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *   try {
+     *     const encKeyPair = await app.crypto.generateEncKeyPair();
+     *     const secEncKey = encKeyPair.secEncKey;
+     *     const rawSecEncKey = await secEncKey.getRaw();
+     *   } catch (err) {
+     *     throw err;
+     *   }
+     * };
      */
     getRaw(): Promise<Buffer>;
 
     /**
-     * Decrypt the given cipher text (buffer or string) using this secret
-     * encryption key and the given public key.
+     * Decrypt the given encrypted data using the sender's public encryption key
+     * and the recipient's secret encryption key. Read more about [authenticated encryption]{@link https://libsodium.gitbook.io/doc/public-key_cryptography/authenticated_encryption}.
      *
-     * An example use case for this method is if you have received messages from
-     * multiple senders, you may fetch your secret key once, then iterate over the
-     * messages along with passing associated public encryption key to decrypt
-     * each message.
+     * An example use case for this method is if you have received messages from multiple
+     * senders, you may fetch your secret key once, then iterate over the messages
+     * passing each associated public encryption key to decrypt each message.
      *
-     * @param cipher to decrypt
-     * @param publicEncKey public encryption key
-     * @returns plain text
+     * @arg cipher Encrypted data
+     * @arg publicEncKey Sender's public encryption key
+     * @throws {MISSING_PUB_ENC_KEY}
+     * @returns Decrypted data
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     const cipher = 'plain text to be encrypted';
+     *     try {
+     *       const encKeyPair = await app.crypto.generateEncKeyPair();
+     *       const rawPubEncKey = Buffer.from(<sender's public encryption key>);
+     *       const pubEncKey = await app.crypto.pubEncKeyFromRaw(rawPubEncKey.buffer);
+     *       const secretEncKey = encKeyPair.secEncKey;
+     *       const decryptedData = await pubEncKey.decrypt(cipher, secretEncKey)
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     decrypt(cipher: Buffer, publicEncKey: PubEncKey): Promise<Buffer>;
 
     /**
-     * Encrypt the input (buffer or string) using this secret encryption key
-     * and the recipient's public key.
+     * Encrypt the input using recipient's public encryption key and sender's
+     * secret encryption key, such that each party can generate a shared secret
+     * key to verify the integrity of ciphers and to also decrypt them. Read
+     * more about [authenticated encryption]{@link https://libsodium.gitbook.io/doc/public-key_cryptography/authenticated_encryption}.
      *
-     * An example use case for this method is if you have multiple intended
-     * recipients. You can fetch your secret key once, then use this method to
-     * iterate over recipient public encryption keys, encrypting data for each
-     * key.
-     *
-     * @param data to be encrypted
-     * @param recipientPubKey recipient's public encryption key
-     * @returns cipher text
+     * @param data
+     * @param recipientPubKey Recipient's public encryption key
+     * @returns Encrypted data
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     const data = 'plain text to be encrypted';
+     *     try {
+     *       const encKeyPair = await app.crypto.generateEncKeyPair();
+     *       const rawPubEncKey = Buffer.from(<recipient's public encryption key>);
+     *       const recipientPubKey = await app.crypto.pubEncKeyFromRaw(rawPubEncKey.buffer);
+     *       const secEncKey = encKeyPair.secEncKey;
+     *       const encryptedBuffer = await secEncKey.encrypt(data, recipientPubKey)
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
     encrypt(data: Buffer, recipientPubKey: PubEncKey): Promise<Buffer>;
   }
 
   /**
-   * Holds an asymmetric encryption keypair
+   * Asymmetric encryption keypair
    */
   class EncKeyPair {
 
     /**
-     * get the Public Encryption key instance of this keypair
+     * Get the public encryption key instance of this keypair
      */
     pubEncKey: PubEncKey;
 
     /**
-     * get the Secrect Encryption key instance of this keypair
+     * Get the secret encryption key instance of this keypair
      */
     secEncKey: SecEncKey;
 
     /**
-     * Decrypt the given cipher text with a seal (buffer or string) using this
-     * encryption key pair
-     *
-     * @returns plain text
+     * Decrypt the input using this generated encryption key pair. Only
+     * recipient will be able to decrypt data. Read more about [sealed boxes]{@link https://libsodium.gitbook.io/doc/public-key_cryptography/sealed_boxes}.
+     * 
+     * @param cipher Encrypted data
+     * @returns Decrypted data
+     * @example
+     * // Assumes {@link initialiseApp|SAFEApp} interface has been obtained
+     * const asyncFn = async () => {
+     *     const cipher = <Encrypted data as sealed box>;
+     *     try {
+     *        const encKeyPair = await app.crypto.generateEncKeyPair();
+     *       const decryptedData = await encKeyPair.decryptSealed(cipher);
+     *     } catch(err) {
+     *       throw err;
+     *     }
+     * };
      */
-    decryptSealed(): Promise<Buffer>;
+    decryptSealed(cipher: string | Buffer): Promise<Buffer>;
   }
 
   /**
-   * Holds the public part of a sign key
+   * Holds the public part of a sign key pair
    */
   class PubSignKey {
 
